@@ -7,28 +7,28 @@ Macr055 (m55) is a macro processor. Basic consepts is like m4, but concrete synt
 
 ## Samples
 
-  {m55_define|HELLO|hello, world}
-  {HELLO}
+    {m55_define|HELLO|hello, world}
+    {HELLO}
 ↓
-  
-  hello, world
+    
+    hello, world
 
-  {m55_define|foo|bar}{m55_dnl}
-  {m55_define|barbaz|quuz}{m55_dnl}
-  {{foo}baz}
+    {m55_define|foo|bar}{m55_dnl}
+    {m55_define|barbaz|quuz}{m55_dnl}
+    {{foo}baz}
 ↓
-  quuz
+    quuz
 
-  {m55_define|foo|`{bar}'}{m55_dnl}
-  {m55_define|bar|`{baz}'}{m55_dnl}
-  {m55_define|baz|quuz}{m55_dnl}
-  {foo}
+    {m55_define|foo|`{bar}'}{m55_dnl}
+    {m55_define|bar|`{baz}'}{m55_dnl}
+    {m55_define|baz|quuz}{m55_dnl}
+    {foo}
 ↓
-  quuz
+    quuz
 
-  {m55_define|foo|bar}{m55_dnl}
-  {m55_define|bar|baz}{m55_dnl}
-  {m55_define|baz|quuz}{m55_dnl}
-  {{{foo}}}
+    {m55_define|foo|bar}{m55_dnl}
+    {m55_define|bar|baz}{m55_dnl}
+    {m55_define|baz|quuz}{m55_dnl}
+    {{{foo}}}
 ↓
-  quuz
+    quuz
