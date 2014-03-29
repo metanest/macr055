@@ -8,34 +8,43 @@ Macr055 (m55) is a macro processor. Basic consepts is like m4, but concrete synt
 ## Samples
 
 sample 1 input
+
     {m55_define|HELLO|hello, world}
     {HELLO}
+
 sample 1 output
 
+    (blank line)
     hello, world
 
-    - input(2) -
+sample 2 input
+
     {m55_define|foo|bar}{m55_dnl}
     {m55_define|barbaz|quuz}{m55_dnl}
     {{foo}baz}
 
-    - output(2) -
+sample 2 output
+
     quuz
 
-    - input(3) -
+sample 3 input
+
     {m55_define|foo|`{bar}'}{m55_dnl}
     {m55_define|bar|`{baz}'}{m55_dnl}
     {m55_define|baz|quuz}{m55_dnl}
     {foo}
 
-    - output(3) -
+sample 3 output
+
     quuz
 
-    - input(4) -
+sample 4 input
+
     {m55_define|foo|bar}{m55_dnl}
     {m55_define|bar|baz}{m55_dnl}
     {m55_define|baz|quuz}{m55_dnl}
     {{{foo}}}
 
-    - output(4) -
+sample 4 output
+
     quuz
