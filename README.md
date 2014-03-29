@@ -7,12 +7,11 @@ Macr055 (m55) is a macro processor. Basic consepts is like m4, but concrete synt
 
 ## Samples
 
-    - input(1) -
+sample 1 input
     {m55_define|HELLO|hello, world}
     {HELLO}
+sample 1 output
 
-    - output(1) -
-    
     hello, world
 
     - input(2) -
