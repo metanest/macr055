@@ -165,11 +165,11 @@ function m55_macro_expand(		body, tmp) {
 		m55_do_changequote()
 	} else if (body == M55_CHCTYPE) {
 		m55_do_changecom()
-	} else if (body = M55_CHBTYPE) {
+	} else if (body == M55_CHBTYPE) {
 		m55_do_changebracket()
-	} else if (body = M55_CHSTYPE) {
+	} else if (body == M55_CHSTYPE) {
 		m55_do_changesep()
-	} else if (body = M55_CHPTYPE) {
+	} else if (body == M55_CHPTYPE) {
 		m55_do_changepre()
 	}
 	# others (user macros)
