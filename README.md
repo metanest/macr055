@@ -48,3 +48,16 @@ sample 4 input
 sample 4 output
 
     quuz
+
+## Any lexical elements customizable!
+
+For example,
+
+    {m55_changequote|[|]} # {comment}
+    {m55_changecom|[/*]|[*/]} /* {comment} */
+    {m55_changebracket|[<]|[>]}
+    <m55_changesep|[,]>
+    <m55_changepre,[@]>
+    
+    <m55_define,[cat],[[@1@2@3@4@5@6@7@8@9]]>
+    <cat,foo,bar,baz>
