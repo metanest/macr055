@@ -49,6 +49,15 @@ sample 4 output
 
     quuz
 
+sample 5 input
+
+    {m55_define|rev3|$3 $2 $1}{m55_dnl}
+    {rev3|foo|bar|baz}
+
+sample 5 output
+
+    baz bar foo
+
 ## Any lexical elements customizable!
 
 For example,
