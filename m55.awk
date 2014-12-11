@@ -147,7 +147,7 @@ function m55_main(		tokens1, tokens2, tokens3, token, tmp, depth, macroname, buf
 	exit 0
 }
 
-function m55_macro_expand(		body, tmp) {
+function m55_macro_expand(		body, tmp, c) {
 	body = m55_frame_getmacrobody()
 
 	# search pre-defined (built-in) macros
