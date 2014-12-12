@@ -7,7 +7,7 @@ BEGIN {
 
 # main
 
-function m55_main(		tokens1, tokens2, tokens3, token, tmp, depth, macroname, buf) {
+function m55_main(		tokens1, tokens2, tokens3, token, tmp, depth) {
 
 	# globals/input
 	m55_input_buf = ""
@@ -16,11 +16,8 @@ function m55_main(		tokens1, tokens2, tokens3, token, tmp, depth, macroname, buf
 	m55_stack_sp = 0
 	split("", m55_stack)
 
-	# globals/frame
-	m55_frame_fp = -1
-
-	# globals/macro table
-	split("", m55_macro_tbl)
+	# globals/frame2
+	m55_frame2_init()
 
 	# tags
 	M55_USRTYPE = " "
@@ -49,17 +46,17 @@ function m55_main(		tokens1, tokens2, tokens3, token, tmp, depth, macroname, buf
 	M55_PARAM_PREFIX = "$"
 
 	# pre-defined macros
-	m55_macro_install("m55_define", M55_DEFTYPE)
-	m55_macro_install("m55_dnl", M55_DNLTYPE)
-	m55_macro_install("m55_ifelse", M55_IFETYPE)
-	m55_macro_install("m55_esyscmd", M55_ESYTYPE)
-	m55_macro_install("m55_expr", M55_EXPTYPE)
+	m55_frame2_pushdef("m55_define", M55_DEFTYPE)
+	m55_frame2_pushdef("m55_dnl", M55_DNLTYPE)
+	m55_frame2_pushdef("m55_ifelse", M55_IFETYPE)
+	m55_frame2_pushdef("m55_esyscmd", M55_ESYTYPE)
+	m55_frame2_pushdef("m55_expr", M55_EXPTYPE)
 
-	m55_macro_install("m55_changequote", M55_CHQTYPE)
-	m55_macro_install("m55_changecom", M55_CHCTYPE)
-	m55_macro_install("m55_changebracket", M55_CHBTYPE)
-	m55_macro_install("m55_changesep", M55_CHSTYPE)
-	m55_macro_install("m55_changepre", M55_CHPTYPE)
+	m55_frame2_pushdef("m55_changequote", M55_CHQTYPE)
+	m55_frame2_pushdef("m55_changecom", M55_CHCTYPE)
+	m55_frame2_pushdef("m55_changebracket", M55_CHBTYPE)
+	m55_frame2_pushdef("m55_changesep", M55_CHSTYPE)
+	m55_frame2_pushdef("m55_changepre", M55_CHPTYPE)
 
 	# main loop
 	for (;;) {
@@ -74,7 +71,8 @@ function m55_main(		tokens1, tokens2, tokens3, token, tmp, depth, macroname, buf
 
 		if ((token = m55_input_get(tokens1)) != "") {
 			if (token == M55_MACRO_BRA) {
-				m55_frame_enter()
+				m55_frame2_enter()
+				m55_frame2_newarg()
 			} else if (token == M55_QUOTE_BRA) {
 				depth = 1
 				delete tmp
@@ -99,25 +97,15 @@ function m55_main(		tokens1, tokens2, tokens3, token, tmp, depth, macroname, buf
 			} else {
 				m55_error("assert false")
 			}
-		} else if (m55_frame_inmacro() && ((token = m55_input_get(tokens2)) != "")) {
-			if (m55_frame_inmacroname()) {
-				macroname = m55_frame_getmacroarg(0)
-				m55_macro_lookup(macroname, buf)
-				if (0 in buf) {
-					m55_frame_setmacrobody(buf[0])
-				} else {
-					m55_error("unknown macro name \"" macroname "\"")
-				}
-			}
+		} else if (m55_frame2_inmacro() && ((token = m55_input_get(tokens2)) != "")) {
 			if (token == M55_MACRO_SEP) {
-				m55_frame_newarg()
+				m55_frame2_newarg()
 			} else if (token == M55_MACRO_KET) {
-				m55_macro_expand()
-				m55_frame_leave()
+				m55_leave_and_expand()
 			} else {
 				m55_error("assert false")
 			}
-		} else if (( ! m55_frame_inmacro()) && ((token = m55_input_get(tokens3)) != "")) {
+		} else if (( ! m55_frame2_inmacro()) && ((token = m55_input_get(tokens3)) != "")) {
 			m55_output(token)
 			delete tmp
 			tmp[M55_COMMENT_KET] = 0
@@ -140,37 +128,50 @@ function m55_main(		tokens1, tokens2, tokens3, token, tmp, depth, macroname, buf
 		}
 	}
 
-	if (m55_frame_inmacro()) {
+	if (m55_frame2_inmacro()) {
 		m55_error("EOF in macro")
 	}
 
 	exit 0
 }
 
-function m55_macro_expand(		body, tmp, c) {
-	body = m55_frame_getmacrobody()
+function m55_leave_and_expand(		args, defs, macroname, buf, body, tmp, c, d) {
+	m55_frame2_leave(args, defs)
+
+	macroname = args[0]
+
+	if (macroname in defs) {
+		body = defs[macroname]
+	} else {
+		m55_frame2_lookupdef(macroname, buf)
+		if (0 in buf) {
+			body = buf[0]
+		} else {
+			m55_error("unknown macro name \"" macroname "\"")
+		}
+	}
 
 	# search pre-defined (built-in) macros
 	if (body == M55_DEFTYPE) {
-		m55_do_define()
+		m55_do_define(args)
 	} else if (body == M55_DNLTYPE) {
-		m55_do_dnl()
+		m55_do_dnl(args)
 	} else if (body == M55_IFETYPE) {
-		m55_do_ifelse()
+		m55_do_ifelse(args)
 	} else if (body == M55_ESYTYPE) {
-		m55_do_esyscmd()
+		m55_do_esyscmd(args)
 	} else if (body == M55_EXPTYPE) {
-		m55_do_expr()
+		m55_do_expr(args)
 	} else if (body == M55_CHQTYPE) {
-		m55_do_changequote()
+		m55_do_changequote(args)
 	} else if (body == M55_CHCTYPE) {
-		m55_do_changecom()
+		m55_do_changecom(args)
 	} else if (body == M55_CHBTYPE) {
-		m55_do_changebracket()
+		m55_do_changebracket(args)
 	} else if (body == M55_CHSTYPE) {
-		m55_do_changesep()
+		m55_do_changesep(args)
 	} else if (body == M55_CHPTYPE) {
-		m55_do_changepre()
+		m55_do_changepre(args)
 	}
 	# others (user macros)
 	else {
@@ -186,11 +187,15 @@ function m55_macro_expand(		body, tmp, c) {
 				n = substr(body, 1, 1)
 				body = substr(body, 2, length(body)-1)
 				if (n == "#") {
-					tmp = tmp m55_frame_getmacroargc()
+					d = 0
+					while (d in args) {
+						++d
+					}
+					tmp = tmp d
 				} else if (n == M55_PARAM_PREFIX) {
 					tmp = tmp M55_PARAM_PREFIX
 				} else {
-					tmp = tmp m55_frame_getmacroarg(n)
+					tmp = tmp args[n]
 				}
 			} else {
 				tmp = tmp c
@@ -202,20 +207,17 @@ function m55_macro_expand(		body, tmp, c) {
 
 # routines for pre-defined macros
 
-function m55_do_define(		name, body) {
-	name = m55_frame_getmacroarg(1)
-	body = m55_frame_getmacroarg(2)
-	m55_macro_install(name, M55_USRTYPE body)
+function m55_do_define(args) {
+	m55_frame2_pushdef(args[1], M55_USRTYPE args[2])
 }
 
-function m55_do_dnl(		c) {
+function m55_do_dnl(args,		c) {
 	do {
 		c = m55_input_getchar()
 	} while ((c != "") && (c != "\n"))
 }
 
-function m55_do_ifelse(		args, base) {
-	m55_frame_getmacroargs(args)
+function m55_do_ifelse(args,		base) {
 	base = 1
 	for (;;) {
 		if (args[base+0] == args[base+1]) {
@@ -230,50 +232,50 @@ function m55_do_ifelse(		args, base) {
 	}
 }
 
-function m55_do_esyscmd(		cmd, result) {
-	cmd = m55_frame_getmacroarg(1)
+function m55_do_esyscmd(args,		cmd, result) {
+	cmd = args[1]
 	cmd | getline
 	result = $0
 	close(cmd)
 	m55_input_pushback(result)
 }
 
-function m55_do_expr(		expr) {
-	expr = m55_frame_getmacroarg(1)
+function m55_do_expr(args,		expr) {
+	expr = args[1]
 	print expr | m55_do_expr_cmd
 	getline < m55_do_expr_fifo
 	# must not close
 	m55_input_pushback($0)
 }
 
-function m55_do_changequote() {
-	M55_QUOTE_BRA = m55_frame_getmacroarg(1)
-	M55_QUOTE_KET = m55_frame_getmacroarg(2)
+function m55_do_changequote(args) {
+	M55_QUOTE_BRA = args[1]
+	M55_QUOTE_KET = args[2]
 }
 
-function m55_do_changecom() {
-	M55_COMMENT_BRA = m55_frame_getmacroarg(1)
-	M55_COMMENT_KET = m55_frame_getmacroarg(2)
+function m55_do_changecom(args) {
+	M55_COMMENT_BRA = args[1]
+	M55_COMMENT_KET = args[2]
 }
 
-function m55_do_changebracket() {
-	M55_MACRO_BRA = m55_frame_getmacroarg(1)
-	M55_MACRO_KET = m55_frame_getmacroarg(2)
+function m55_do_changebracket(args) {
+	M55_MACRO_BRA = args[1]
+	M55_MACRO_KET = args[2]
 }
 
-function m55_do_changesep() {
-	M55_MACRO_SEP = m55_frame_getmacroarg(1)
+function m55_do_changesep(args) {
+	M55_MACRO_SEP = args[1]
 }
 
-function m55_do_changepre() {
-	M55_PARAM_PREFIX = m55_frame_getmacroarg(1)
+function m55_do_changepre(args) {
+	M55_PARAM_PREFIX = args[1]
 }
 
 # output module
 
 function m55_output(s) {
-	if (m55_frame_inmacro()) {
-		m55_frame_setlastarg(m55_frame_getlastarg() s)
+	if (m55_frame2_inmacro()) {
+		m55_frame2_setlastarg(m55_frame2_getlastarg() s)
 	} else {
 		printf("%s", s)
 	}
@@ -302,106 +304,148 @@ function m55_stack_set(idx, item) {
 	m55_stack[idx] = item
 }
 
-# frame module
-
-# globals: m55_frame_fp
-
-# フレームの構造は次のようになる
-#
-# ↓old-sp     fp       fp + 1     ...
-#          | old-fp | macro body | macro name | arg1 | arg2 ...
-
-function m55_frame_dump() {
-	print "sp == " m55_stack_sp
-	print "fp == " m55_frame_fp
+function m55_stack_dump() {
+	print "m55_stack_sp == " m55_stack_sp
 	m55_util_dumparray(m55_stack)
 }
 
-function m55_frame_enter() {
-	m55_stack_push(m55_frame_fp)
-	m55_frame_fp = m55_stack_sp
-	m55_stack_push(-1) # macro body
-	m55_stack_push("") # macro name
+# frame2 module
+
+# globals: m55_frame2_base, m55_frame2_lastarg, m55_frame2_lastdef, m55_frame2_lastargidx
+
+function m55_frame2_init() {
+	m55_frame2_base = 0
+	m55_frame2_lastarg = m55_frame2_base
+	m55_frame2_lastdef = m55_frame2_base
+	m55_frame2_lastargidx = -1
 }
 
-function m55_frame_leave() {
-	while (m55_stack_sp > m55_frame_fp) {
+function m55_frame2_dumpargs(		a, args, p, b, argc) {
+	a = -1
+	p = m55_frame2_lastargidx
+	while (p != m55_frame2_base) {
+		args[++a] = m55_stack_get(p)
+		p = m55_stack_get(--p)
+	}
+	argc = a + 1
+	b = 0
+	while (b < a) {
+		tmp = args[a]
+		args[a] = args[b]
+		args[b] = tmp
+		--a
+		++b
+	}
+	for (a = 0; a < argc; ++a) {
+		print a ": " args[a]
+	}
+}
+
+function m55_frame2_dumpdefs(		b, p) {
+	b = m55_frame2_base
+	p = m55_frame2_lastdef
+	for (;;) {
+		while (p != b) {
+			print m55_stack_get(p)
+			p = m55_stack_get(--p)
+		}
+		p = m55_stack_get(b-2)
+		if (!p) {
+			break
+		}
+		b = m55_stack_get(b)
+		print "===="
+	}
+}
+
+function m55_frame2_enter() {
+	m55_stack_push(m55_frame2_lastarg)
+	m55_stack_push(m55_frame2_lastdef)
+	m55_stack_push(m55_frame2_lastargidx)
+	m55_stack_push(m55_frame2_base)
+	m55_frame2_base = m55_stack_sp
+	m55_frame2_lastarg = m55_frame2_base
+	m55_frame2_lastdef = m55_frame2_base
+	m55_frame2_lastargidx = -1
+}
+
+function m55_frame2_leave(args, defs,		tmp, name, n) {
+	while (m55_frame2_lastarg != m55_frame2_base) {
+		args[m55_frame2_lastargidx] = m55_stack_get(m55_frame2_lastarg)
+		--m55_frame2_lastargidx
+		m55_frame2_lastarg = m55_stack_get(m55_frame2_lastarg-1)
+	}
+	while (m55_frame2_lastdef != m55_frame2_base) {
+		tmp = m55_stack_get(m55_frame2_lastdef)
+		match(tmp, /^[1-9][0-9]*/)
+		n = 0 + substr(tmp, 1, RLENGTH)
+		tmp = substr(tmp, RLENGTH+2, length(tmp)-RLENGTH-1)
+		name = substr(tmp, 1, n)
+		if ( ! (name in defs)) {
+			defs[name] = substr(tmp, n+1, length(tmp)-n)
+		}
+		m55_frame2_lastdef = m55_stack_get(m55_frame2_lastdef-1)
+	}
+	while (m55_stack_sp > m55_frame2_base) {
 		m55_stack_pop()
 	}
-	m55_frame_fp = m55_stack_pop()
+	m55_frame2_base = m55_stack_pop()
+	m55_frame2_lastargidx = m55_stack_pop()
+	m55_frame2_lastdef = m55_stack_pop()
+	m55_frame2_lastarg = m55_stack_pop()
 }
 
-function m55_frame_inmacroname() {
-	return m55_frame_inmacro() && (m55_stack_sp == m55_frame_fp+2)
+function m55_frame2_inmacro() {
+	return m55_frame2_lastargidx >= 0
 }
 
-#function m55_frame_inmacroarg() {
-#	return m55_frame_inmacro() && (m55_stack_sp > m55_frame_fp+2)
-#}
-
-function m55_frame_inmacro() {
-	return m55_frame_fp > 0
-}
-
-function m55_frame_newarg() {
+function m55_frame2_newarg() {
+	m55_stack_push(m55_frame2_lastarg)
 	m55_stack_push("")
+	m55_frame2_lastarg = m55_stack_sp
+	++m55_frame2_lastargidx
 }
 
-function m55_frame_getmacrobody() {
-	return m55_frame_get(1)
+function m55_frame2_getlastarg() {
+	return m55_stack_get(m55_frame2_lastarg)
 }
 
-function m55_frame_setmacrobody(s) {
-	return m55_frame_set(1, s)
+function m55_frame2_setlastarg(s) {
+	m55_stack_set(m55_frame2_lastarg, s)
 }
 
-function m55_frame_getmacroarg(idx) {
-	return m55_frame_get(2+idx)
+function m55_frame2_pushdef(name, body) {
+	m55_stack_push(m55_frame2_lastdef)
+	m55_stack_push(length(name) " " name body)
+	m55_frame2_lastdef = m55_stack_sp
 }
 
-function m55_frame_getlastarg() {
-	return m55_stack_get(m55_stack_sp)
-}
-
-function m55_frame_setlastarg(s) {
-	m55_stack_set(m55_stack_sp, s)
-}
-
-function m55_frame_getmacroargc() {
-	return m55_stack_sp-(m55_frame_fp+2)
-}
-
-function m55_frame_getmacroargs(arr,
-		n, i) {
-	n = m55_frame_getmacroargc()
-	for (i = 1; i <= n; ++i) {
-		arr[i] = m55_frame_getmacroarg(i)
-	}
-}
-
-# frame module locals
-
-function m55_frame_get(offset) {
-	return m55_stack_get(m55_frame_fp+offset)
-}
-
-function m55_frame_set(offset, item) {
-	m55_stack_set(m55_frame_fp+offset, item)
-}
-
-# macro table module
-
-# globals: m55_macro_tbl
-
-function m55_macro_install(name, body) {
-	m55_macro_tbl[name] = body
-}
-
-function m55_macro_lookup(name, buf) {
+function m55_frame2_lookupdef(name, buf,		namelen, b, p, tmp, n) {
 	delete buf
-	if (name in m55_macro_tbl) {
-		buf[0] = m55_macro_tbl[name]
+	namelen = length(name)
+	b = m55_frame2_base
+	p = m55_frame2_lastdef
+	for (;;) {
+		while (p != b) {
+			tmp = m55_stack_get(p)
+			match(tmp, /^[1-9][0-9]*/)
+			n = 0 + substr(tmp, 1, RLENGTH)
+			if (n == namelen) {
+				tmp = substr(tmp, RLENGTH+2, length(tmp)-RLENGTH-1)
+				if (substr(tmp, 1, n) == name) {
+					buf[0] = substr(tmp, n+1, length(tmp)-n)
+					break
+				}
+			}
+			p = m55_stack_get(--p)
+		}
+		p = m55_stack_get(b-2)
+		if (!p) {
+			break
+		}
+		b = m55_stack_get(b)
 	}
+	return
 }
 
 # input module
