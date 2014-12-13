@@ -23,6 +23,7 @@ function m55_main(		tokens1, tokens2, tokens3, token, tmp, depth) {
 	M55_USRTYPE = " "
 
 	M55_DEFTYPE = "df"
+	M55_VALTYPE = "vl"
 	M55_DNLTYPE = "dn"
 	M55_IFETYPE = "ie"
 	M55_ESYTYPE = "es"
@@ -47,6 +48,7 @@ function m55_main(		tokens1, tokens2, tokens3, token, tmp, depth) {
 
 	# pre-defined macros
 	m55_frame2_pushdef("m55_define", M55_DEFTYPE)
+	m55_frame2_pushdef("m55_val", M55_VALTYPE)
 	m55_frame2_pushdef("m55_dnl", M55_DNLTYPE)
 	m55_frame2_pushdef("m55_ifelse", M55_IFETYPE)
 	m55_frame2_pushdef("m55_esyscmd", M55_ESYTYPE)
@@ -162,6 +164,20 @@ function m55_leave_and_expand(		args, defs, macroname, buf, body, tmp, c, d) {
 		m55_do_esyscmd(args)
 	} else if (body == M55_EXPTYPE) {
 		m55_do_expr(args)
+	} else if (body == M55_VALTYPE) {
+		macroname = args[1]
+		if (macroname in defs) {
+			body = defs[macroname]
+			m55_output(substr(body, 2, length(body)-1))
+		} else {
+			m55_frame2_lookupdef(macroname, buf)
+			if (0 in buf) {
+				body = buf[0]
+				m55_output(substr(body, 2, length(body)-1))
+			} else {
+				m55_error("m55_val: unknown macro name \"" macroname "\"")
+			}
+		}
 	} else if (body == M55_CHQTYPE) {
 		m55_do_changequote(args)
 	} else if (body == M55_CHCTYPE) {
