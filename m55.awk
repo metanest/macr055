@@ -8,7 +8,6 @@ BEGIN {
 # main
 
 function m55_main(		tokens1, tokens2, tokens3, token, tmp, depth) {
-
 	# globals/input
 	m55_input_buf = ""
 
@@ -16,11 +15,11 @@ function m55_main(		tokens1, tokens2, tokens3, token, tmp, depth) {
 	m55_stack_sp = 0
 	split("", m55_stack)
 
-	# globals/frame2
-	m55_frame2_init()
-
 	# globals/macroenv
 	m55_macroenv_args_idx = -1
+	split("", m55_macroenv_defs)
+	split("", m55_macroenv_locals)
+	split("", m55_macroenv_defs_bkup)
 
 	# tags
 	M55_USRTYPE = " "
@@ -50,18 +49,18 @@ function m55_main(		tokens1, tokens2, tokens3, token, tmp, depth) {
 	M55_PARAM_PREFIX = "$"
 
 	# pre-defined macros
-	m55_frame2_pushdef("m55_define", M55_DEFTYPE)
-	m55_frame2_pushdef("m55_val", M55_VALTYPE)
-	m55_frame2_pushdef("m55_dnl", M55_DNLTYPE)
-	m55_frame2_pushdef("m55_ifelse", M55_IFETYPE)
-	m55_frame2_pushdef("m55_esyscmd", M55_ESYTYPE)
-	m55_frame2_pushdef("m55_expr", M55_EXPTYPE)
+	m55_macroenv_def("m55_define", M55_DEFTYPE)
+	m55_macroenv_def("m55_val", M55_VALTYPE)
+	m55_macroenv_def("m55_dnl", M55_DNLTYPE)
+	m55_macroenv_def("m55_ifelse", M55_IFETYPE)
+	m55_macroenv_def("m55_esyscmd", M55_ESYTYPE)
+	m55_macroenv_def("m55_expr", M55_EXPTYPE)
 
-	m55_frame2_pushdef("m55_changequote", M55_CHQTYPE)
-	m55_frame2_pushdef("m55_changecom", M55_CHCTYPE)
-	m55_frame2_pushdef("m55_changebracket", M55_CHBTYPE)
-	m55_frame2_pushdef("m55_changesep", M55_CHSTYPE)
-	m55_frame2_pushdef("m55_changepre", M55_CHPTYPE)
+	m55_macroenv_def("m55_changequote", M55_CHQTYPE)
+	m55_macroenv_def("m55_changecom", M55_CHCTYPE)
+	m55_macroenv_def("m55_changebracket", M55_CHBTYPE)
+	m55_macroenv_def("m55_changesep", M55_CHSTYPE)
+	m55_macroenv_def("m55_changepre", M55_CHPTYPE)
 
 	# main loop
 	for (;;) {
@@ -76,7 +75,7 @@ function m55_main(		tokens1, tokens2, tokens3, token, tmp, depth) {
 
 		if ((token = m55_input_get(tokens1)) != "") {
 			if (token == M55_MACRO_BRA) {
-				m55_frame2_enter()
+				m55_macroenv_enter()
 			} else if (token == M55_QUOTE_BRA) {
 				depth = 1
 				delete tmp
@@ -105,7 +104,7 @@ function m55_main(		tokens1, tokens2, tokens3, token, tmp, depth) {
 			if (token == M55_MACRO_SEP) {
 				m55_macroenv_newarg()
 			} else if (token == M55_MACRO_KET) {
-				m55_leave_and_expand()
+				m55_leave_expand()
 			} else {
 				m55_error("assert false")
 			}
@@ -139,25 +138,17 @@ function m55_main(		tokens1, tokens2, tokens3, token, tmp, depth) {
 	exit 0
 }
 
-function m55_leave_and_expand(		i, args, defs, macroname, buf, body, tmp, c, d) {
-	for (i in m55_macroenv_args) {
-		args[i] = m55_macroenv_args[i]
-	}
-	args[m55_macroenv_args_idx] = m55_macroenv_lastarg
-
-	m55_frame2_leave(defs)
+function m55_leave_expand(		args, locals, macroname, body, tmp, c, n, d) {
+	m55_macroenv_leave(args, locals)
 
 	macroname = args[0]
 
-	if (macroname in defs) {
-		body = defs[macroname]
+	if (macroname in locals) {
+		body = locals[macroname]
+	} else if (macroname in m55_macroenv_defs) {
+		body = m55_macroenv_defs[macroname]
 	} else {
-		m55_frame2_lookupdef(macroname, buf)
-		if (0 in buf) {
-			body = buf[0]
-		} else {
-			m55_error("unknown macro name \"" macroname "\"")
-		}
+		m55_error("unknown macro name \"" macroname "\"")
 	}
 
 	# search pre-defined (built-in) macros
@@ -173,18 +164,14 @@ function m55_leave_and_expand(		i, args, defs, macroname, buf, body, tmp, c, d) 
 		m55_do_expr(args)
 	} else if (body == M55_VALTYPE) {
 		macroname = args[1]
-		if (macroname in defs) {
-			body = defs[macroname]
-			m55_output(substr(body, 2, length(body)-1))
+		if (macroname in locals) {
+			body = locals[macroname]
+		} else if (macroname in m55_macroenv_defs) {
+			body = m55_macroenv_defs[macroname]
 		} else {
-			m55_frame2_lookupdef(macroname, buf)
-			if (0 in buf) {
-				body = buf[0]
-				m55_output(substr(body, 2, length(body)-1))
-			} else {
-				m55_error("m55_val: unknown macro name \"" macroname "\"")
-			}
+			m55_error("m55_val: unknown macro name \"" macroname "\"")
 		}
+		m55_output(substr(body, 2, length(body)-1))
 	} else if (body == M55_CHQTYPE) {
 		m55_do_changequote(args)
 	} else if (body == M55_CHCTYPE) {
@@ -231,7 +218,7 @@ function m55_leave_and_expand(		i, args, defs, macroname, buf, body, tmp, c, d) 
 # routines for pre-defined macros
 
 function m55_do_define(args) {
-	m55_frame2_pushdef(args[1], M55_USRTYPE args[2])
+	m55_macroenv_def(args[1], M55_USRTYPE args[2])
 }
 
 function m55_do_dnl(args,		c) {
@@ -332,122 +319,84 @@ function m55_stack_dump() {
 	m55_util_dumparray(m55_stack)
 }
 
-# frame2 module
-
-# globals: m55_frame2_base, m55_frame2_lastdef
-
-function m55_frame2_init() {
-	m55_frame2_base = 0
-	m55_frame2_lastdef = m55_frame2_base
-}
-
-function m55_frame2_dumpdefs(		b, p) {
-	b = m55_frame2_base
-	p = m55_frame2_lastdef
-	for (;;) {
-		while (p != b) {
-			print m55_stack_get(p)
-			p = m55_stack_get(--p)
-		}
-		p = m55_stack_get(b-1)
-		if (!p) {
-			break
-		}
-		b = m55_stack_get(b)
-		print "===="
-	}
-}
-
-function m55_frame2_enter() {
-	m55_macroenv_enter()
-
-	m55_stack_push(m55_frame2_lastdef)
-	m55_stack_push(m55_frame2_base)
-	m55_frame2_base = m55_stack_sp
-	m55_frame2_lastdef = m55_frame2_base
-}
-
-function m55_frame2_leave(defs,		tmp, name, n) {
-	while (m55_frame2_lastdef != m55_frame2_base) {
-		tmp = m55_stack_get(m55_frame2_lastdef)
-		match(tmp, /^[1-9][0-9]*/)
-		n = 0 + substr(tmp, 1, RLENGTH)
-		tmp = substr(tmp, RLENGTH+2, length(tmp)-RLENGTH-1)
-		name = substr(tmp, 1, n)
-		if ( ! (name in defs)) {
-			defs[name] = substr(tmp, n+1, length(tmp)-n)
-		}
-		m55_frame2_lastdef = m55_stack_get(m55_frame2_lastdef-1)
-	}
-	while (m55_stack_sp > m55_frame2_base) {
-		m55_stack_pop()
-	}
-	m55_frame2_base = m55_stack_pop()
-	m55_frame2_lastdef = m55_stack_pop()
-
-	m55_macroenv_leave()
-}
-
-function m55_frame2_pushdef(name, body) {
-	m55_stack_push(m55_frame2_lastdef)
-	m55_stack_push(length(name) " " name body)
-	m55_frame2_lastdef = m55_stack_sp
-}
-
-function m55_frame2_lookupdef(name, buf,		namelen, b, p, tmp, n) {
-	delete buf
-	namelen = length(name)
-	b = m55_frame2_base
-	p = m55_frame2_lastdef
-	for (;;) {
-		while (p != b) {
-			tmp = m55_stack_get(p)
-			match(tmp, /^[1-9][0-9]*/)
-			n = 0 + substr(tmp, 1, RLENGTH)
-			if (n == namelen) {
-				tmp = substr(tmp, RLENGTH+2, length(tmp)-RLENGTH-1)
-				if (substr(tmp, 1, n) == name) {
-					buf[0] = substr(tmp, n+1, length(tmp)-n)
-					break
-				}
-			}
-			p = m55_stack_get(--p)
-		}
-		p = m55_stack_get(b-1)
-		if (!p) {
-			break
-		}
-		b = m55_stack_get(b)
-	}
-	return
-}
-
 # macroenv module
 
-# globals: m55_macroenv_args, m55_macroenv_args_idx, m55_macroenv_lastarg
+# globals:
+#   m55_macroenv_args, m55_macroenv_args_idx, m55_macroenv_lastarg
+#   m55_macroenv_defs, m55_macroenv_locals, m55_macroenv_defs_bkup
 
-function m55_macroenv_enter(		i) {
+function m55_macroenv_enter(		i, name) {
 	# save old args
 	for (i = 0; i < m55_macroenv_args_idx; ++i) {
 		m55_stack_push(m55_macroenv_args[i])
 	}
 	m55_stack_push(m55_macroenv_lastarg)
 	m55_stack_push(m55_macroenv_args_idx)
-
 	# setup new args
 	delete m55_macroenv_args
 	m55_macroenv_args_idx = 0
 	m55_macroenv_lastarg = ""
+
+	# save old defs_bkup
+	i = 0
+	for (name in m55_macroenv_defs_bkup) {
+		m55_stack_push(length(name) " " name m55_macroenv_defs_bkup[name])
+		++i
+	}
+	m55_stack_push(i)
+	delete m55_macroenv_defs_bkup
+
+	# save old locals
+	i = 0
+	for (name in m55_macroenv_locals) {
+		m55_stack_push(name)
+		++i
+	}
+	m55_stack_push(i)
+	delete m55_macroenv_locals
 }
 
-function m55_macroenv_leave(		i) {
-	# discard current args
-	delete m55_macroenv_args
+function m55_macroenv_leave(args, locals,		i, n, tmp, buf) {
+	# copy args
+	for (i in m55_macroenv_args) {
+		args[i] = m55_macroenv_args[i]
+	}
+	args[m55_macroenv_args_idx] = m55_macroenv_lastarg
+
+	# copy locals
+	for (n in m55_macroenv_locals) {
+		locals[n] = m55_macroenv_defs[n]
+	}
+
+	# restore defs
+	for (tmp in m55_macroenv_locals) {
+		delete m55_macroenv_defs[tmp]
+	}
+	for (tmp in m55_macroenv_defs_bkup) {
+		m55_macroenv_defs[tmp] = m55_macroenv_defs_bkup[tmp]
+	}
+
+	# load old locals
+	delete m55_macroenv_locals
+	n = m55_stack_pop()
+	for (i = n-1; i >= 0; --i) {
+		m55_macroenv_locals[m55_stack_pop()] = 1
+	}
+
+	# load old defs_bkup
+	delete m55_macroenv_defs_bkup
+	n = m55_stack_pop()
+	for (i = n-1; i >= 0; --i) {
+		tmp = m55_stack_pop()
+		m55_macroenv_split(tmp, buf)
+		m55_macroenv_defs_bkup[buf[0]] = buf[1]
+	}
 
 	# load old args
+	delete m55_macroenv_args
 	m55_macroenv_args_idx = m55_stack_pop()
 	m55_macroenv_lastarg = m55_stack_pop()
-	for (i = m55_macroenv_args_idx - 1; i >= 0; --i) {
+	for (i = m55_macroenv_args_idx-1; i >= 0; --i) {
 		m55_macroenv_args[i] = m55_stack_pop()
 	}
 }
@@ -464,6 +413,24 @@ function m55_macroenv_inmacro() {
 
 function m55_macroenv_appendlastarg(s) {
 	m55_macroenv_lastarg = m55_macroenv_lastarg s
+}
+
+function m55_macroenv_def(name, body) {
+	if (( ! (name in m55_macroenv_locals)) && (name in m55_macroenv_defs)) {
+		m55_macroenv_defs_bkup[name] = m55_macroenv_defs[name]
+	}
+	m55_macroenv_defs[name] = body
+	m55_macroenv_locals[name] = 1
+}
+
+function m55_macroenv_split(n_name_body, buf,		tmp, n) {
+	if ( ! match(n_name_body, /^[1-9][0-9]* /)) {
+		m55_error("assert false")
+	}
+	n = substr(n_name_body, 1, RLENGTH-1) - 0
+	tmp = substr(n_name_body, RLENGTH+1, length(n_name_body)-RLENGTH)
+	buf[0] = substr(tmp, 1, n)
+	buf[1] = substr(tmp, n+1, length(tmp)-n)
 }
 
 # input module
@@ -567,6 +534,13 @@ function m55_util_dumparray(arr,
 		i) {
 	for (i = 1; i in arr; ++i) {
 		print i ": " arr[i]
+	}
+}
+
+function m55_util_dumparray2(arr,
+		key) {
+	for (key in arr) {
+		print "[" key "]=" arr[key]
 	}
 }
 
