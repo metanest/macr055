@@ -11,7 +11,7 @@ atexit() {
 	[ "x${workdir}" != "x" -a -d "${workdir}" ] && ${RM} -Rf "${workdir}"
 }
 
-workdir="`${MKTEMP} -d`"
+workdir="`${MKTEMP} -d -t macr055.$$`"
 bcfifo="${workdir}/bcfifo"
 ${MKFIFO} "${bcfifo}"
 
