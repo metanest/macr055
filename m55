@@ -6,13 +6,13 @@ MKTEMP=/usr/bin/mktemp
 RM=/bin/rm
 
 trap atexit EXIT
-trap 'result=$?; trap - EXIT; atexit; exit ${result}' SIGHUP SIGINT SIGQUIT SIGABRT SIGALRM SIGTERM
+trap 'result=$?; trap - EXIT; atexit; exit $result' SIGHUP SIGINT SIGQUIT SIGABRT SIGALRM SIGTERM
 atexit() {
-	[ "x${workdir}" != "x" -a -d "${workdir}" ] && ${RM} -Rf "${workdir}"
+	[ "x${workdir}" != "x" -a -d "${workdir}" ] && "${RM}" -Rf "${workdir}"
 }
 
 workdir="`${MKTEMP} -d -t macr055.$$`"
 bcfifo="${workdir}/bcfifo"
-${MKFIFO} "${bcfifo}"
+"${MKFIFO}" "${bcfifo}"
 
-${AWK} -v "m55_do_expr_fifo=${bcfifo}" -f m55.awk "$@"
+"${AWK}" -v "m55_do_expr_fifo=${bcfifo}" -f "$0.awk" "$@"
