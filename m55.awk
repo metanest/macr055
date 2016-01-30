@@ -27,7 +27,6 @@ function m55_main(		tokens1, tokens2, tokens3, token, tmp, depth) {
 	M55_DEFTYPE = "df"
 	M55_VALTYPE = "vl"
 	M55_DNLTYPE = "dn"
-	M55_IFETYPE = "ie"
 	M55_ESYTYPE = "es"
 	M55_EXPTYPE = "ex"
 
@@ -52,7 +51,6 @@ function m55_main(		tokens1, tokens2, tokens3, token, tmp, depth) {
 	m55_macroenv_def("m55_define", M55_DEFTYPE)
 	m55_macroenv_def("m55_val", M55_VALTYPE)
 	m55_macroenv_def("m55_dnl", M55_DNLTYPE)
-	m55_macroenv_def("m55_ifelse", M55_IFETYPE)
 	m55_macroenv_def("m55_esyscmd", M55_ESYTYPE)
 	m55_macroenv_def("m55_expr", M55_EXPTYPE)
 
@@ -156,8 +154,6 @@ function m55_leave_expand(		args, locals, macroname, body, tmp, c, n, d) {
 		m55_do_define(args)
 	} else if (body == M55_DNLTYPE) {
 		m55_do_dnl(args)
-	} else if (body == M55_IFETYPE) {
-		m55_do_ifelse(args)
 	} else if (body == M55_ESYTYPE) {
 		m55_do_esyscmd(args)
 	} else if (body == M55_EXPTYPE) {
@@ -225,21 +221,6 @@ function m55_do_dnl(args,		c) {
 	do {
 		c = m55_input_getchar()
 	} while ((c != "") && (c != "\n"))
-}
-
-function m55_do_ifelse(args,		base) {
-	base = 1
-	for (;;) {
-		if (args[base+0] == args[base+1]) {
-			m55_input_pushback(args[base+2])
-			return
-		}
-		if ( ! ((base+4) in args)) {
-			m55_input_pushback(args[base+3])
-			return
-		}
-		base += 3
-	}
 }
 
 function m55_do_esyscmd(args,		cmd, result) {

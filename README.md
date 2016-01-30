@@ -58,6 +58,25 @@ sample 5 output
 
     baz bar foo
 
+## ifelse macro trick (based on paper of C. Strachey's GPM)
+
+sample input
+
+    {m55_define|ifelse|`{$1|
+      {m55_define|$1|$4}
+      {m55_define|$2|$3}}'}{m55_dnl}
+    {ifelse|foo|foo|equql|not-equal}
+    {ifelse|foo|bar|equql|not-equal}
+
+sample output
+
+    equal
+    not-equal
+
+## Changes
+
+2016/Jan/31 remove m55_ifelse primitive
+
 ## Any lexical elements customizable!
 
 For example,
