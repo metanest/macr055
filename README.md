@@ -20,34 +20,34 @@ sample 1 output
 sample 2 input
 
     {m55_define|foo|bar}{m55_dnl}
-    {m55_define|barbaz|quuz}{m55_dnl}
+    {m55_define|barbaz|quux}{m55_dnl}
     {{foo}baz}
 
 sample 2 output
 
-    quuz
+    quux
 
 sample 3 input
 
     {m55_define|foo|`{bar}'}{m55_dnl}
     {m55_define|bar|`{baz}'}{m55_dnl}
-    {m55_define|baz|quuz}{m55_dnl}
+    {m55_define|baz|quux}{m55_dnl}
     {foo}
 
 sample 3 output
 
-    quuz
+    quux
 
 sample 4 input
 
     {m55_define|foo|bar}{m55_dnl}
     {m55_define|bar|baz}{m55_dnl}
-    {m55_define|baz|quuz}{m55_dnl}
+    {m55_define|baz|quux}{m55_dnl}
     {{{foo}}}
 
 sample 4 output
 
-    quuz
+    quux
 
 sample 5 input
 
