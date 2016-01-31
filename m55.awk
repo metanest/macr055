@@ -29,6 +29,7 @@ function m55_main(		tokens1, tokens2, tokens3, token, tmp, depth) {
 	M55_DNLTYPE = "dn"
 	M55_ESYTYPE = "es"
 	M55_EXPTYPE = "ex"
+	M55_WRTTYPE = "wr"
 
 	M55_CHQTYPE = "cq"
 	M55_CHCTYPE = "cc"
@@ -53,6 +54,7 @@ function m55_main(		tokens1, tokens2, tokens3, token, tmp, depth) {
 	m55_macroenv_def("m55_dnl", M55_DNLTYPE)
 	m55_macroenv_def("m55_esyscmd", M55_ESYTYPE)
 	m55_macroenv_def("m55_expr", M55_EXPTYPE)
+	m55_macroenv_def("m55_write", M55_WRTTYPE)
 
 	m55_macroenv_def("m55_changequote", M55_CHQTYPE)
 	m55_macroenv_def("m55_changecom", M55_CHCTYPE)
@@ -158,6 +160,8 @@ function m55_leave_expand(		args, locals, macroname, body, tmp, c, n, d) {
 		m55_do_esyscmd(args)
 	} else if (body == M55_EXPTYPE) {
 		m55_do_expr(args)
+	} else if (body == M55_WRTTYPE) {
+		m55_do_write(args)
 	} else if (body == M55_VALTYPE) {
 		macroname = args[1]
 		if (macroname in locals) {
@@ -237,6 +241,10 @@ function m55_do_expr(args,		expr) {
 	getline < m55_do_expr_fifo
 	# must not close
 	m55_input_pushback($0)
+}
+
+function m55_do_write(args) {
+	printf("%s", args[1])
 }
 
 function m55_do_changequote(args) {
