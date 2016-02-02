@@ -1,6 +1,7 @@
 #
 BEGIN {
 	m55_do_expr_cmd = "/usr/bin/bc > " m55_do_expr_fifo
+	m55_util_ord_init()
 	m55_main()
 	exit
 }
@@ -205,7 +206,7 @@ function m55_leave_expand(		args, locals, macroname, body, tmp, c, n, d) {
 				} else if (n == M55_PARAM_PREFIX) {
 					tmp = tmp M55_PARAM_PREFIX
 				} else {
-					tmp = tmp args[n]
+					tmp = tmp args[m55_util_ord(n)-48]
 				}
 			} else {
 				tmp = tmp c
@@ -536,4 +537,21 @@ function m55_util_dumparray2(arr,
 function m55_error(s) {
 	print s > "/dev/stderr"
 	exit 2
+}
+
+# ord/chr
+
+function m55_util_ord_init(		i) {
+	delete M55_ORD_TBL_
+	for (i = 0; i < 256; ++i) {
+		M55_ORD_TBL_[sprintf("%c", i)] = i
+	}
+}
+
+function m55_util_ord(c) {
+	return M55_ORD_TBL_[substr(c, 1, 1)]
+}
+
+function m55_util_chr(c) {
+	return sprintf("%c", c - 0)
 }
