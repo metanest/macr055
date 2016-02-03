@@ -92,8 +92,8 @@ sample output
 
 ## Changes
 
-2016/Jan/31 remove m55_ifelse primitive
-2016/Feb/3 spec of number of arguments is changed
+- 2016/Jan/31 remove m55_ifelse primitive
+- 2016/Feb/3 charactor for number of arguments is changed
 
 ## Any lexical elements customizable!
 
