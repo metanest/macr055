@@ -197,7 +197,7 @@ function m55_leave_expand(		args, locals, macroname, body, tmp, c, n, d) {
 			if (c == M55_PARAM_PREFIX) {
 				n = substr(body, 1, 1)
 				body = substr(body, 2, length(body)-1)
-				if (n == "#") {
+				if (m55_util_ord(n) == m55_util_ord(M55_PARAM_PREFIX)-1) {
 					d = 0
 					while (d in args) {
 						++d

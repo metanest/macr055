@@ -73,9 +73,27 @@ sample output
     equal
     not-equal
 
+## number of arguments sample
+
+sample input
+
+    {m55_define|a|$#}{m55_dnl}
+    {a}{a|}{a||}{a|||}
+    {m55_changepre|@}{m55_dnl}
+    {m55_define|b|@?}{m55_dnl}
+    {b}{b|}{b||}{b|||}
+
+sample output
+
+    1234
+    1234
+
+( chr(ord(prefix_char) - 1) )
+
 ## Changes
 
 2016/Jan/31 remove m55_ifelse primitive
+2016/Feb/3 spec of number of arguments is changed
 
 ## Any lexical elements customizable!
 
