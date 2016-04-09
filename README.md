@@ -90,10 +90,28 @@ sample output
 
 ( chr(ord(prefix_char) - 1) )
 
+## allargs sample
+
+sample input
+
+    {m55_define|foo|$%}{m55_dnl}
+    {foo}
+    {foo|a}
+    {foo|a|b}
+
+sample output
+
+    
+    a
+    a|b
+
+( chr(ord(prefix_char) + 1) )
+
 ## Changes
 
 - 2016/Jan/31 remove m55_ifelse primitive
 - 2016/Feb/3 charactor for number of arguments is changed
+- 2016/Apr/9 allargs
 
 ## Any lexical elements customizable!
 

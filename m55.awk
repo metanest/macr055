@@ -203,6 +203,11 @@ function m55_leave_expand(		args, locals, macroname, body, tmp, c, n, d) {
 						++d
 					}
 					tmp = tmp d
+				} else if (m55_util_ord(n) == m55_util_ord(M55_PARAM_PREFIX)+1) {
+					d = args[0]
+					delete args[0]
+					tmp = tmp m55_util_join(args, M55_MACRO_SEP, 1)
+					args[0] = d
 				} else if (n == M55_PARAM_PREFIX) {
 					tmp = tmp M55_PARAM_PREFIX
 				} else {
@@ -518,6 +523,20 @@ function m55_input_cut(len,
 
 function m55_util_is_starts(str, s) {
 	return substr(str, 1, length(s)) == s
+}
+
+function m55_util_join(arr, sep, origin,
+		tmp, next_of_last, i) {
+	next_of_last = origin
+	while (next_of_last in arr) {
+		++next_of_last
+	}
+	tmp = ""
+	for (i = origin; i < (next_of_last-1); ++i) {
+		tmp = tmp arr[i] sep
+	}
+	tmp = tmp arr[i]
+	return tmp
 }
 
 function m55_util_dumparray(arr,
