@@ -65,8 +65,8 @@ sample input
     {m55_define|ifelse|`{$1|
       {m55_define|$1|$4}
       {m55_define|$2|$3}}'}{m55_dnl}
-    {ifelse|foo|foo|equql|not-equal}
-    {ifelse|foo|bar|equql|not-equal}
+    {ifelse|foo|foo|equal|not-equal}
+    {ifelse|foo|bar|equal|not-equal}
 
 sample output
 
