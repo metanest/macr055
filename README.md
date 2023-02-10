@@ -3,7 +3,7 @@ Macr055
 
 ## What is this?
 
-Macr055 (m55) is a macro processor. Basic consepts are like m4, but concrete syntax is not.
+Macr055 (m55) is a macro processor. Basic consepts are like m4, but concrete syntax is not at all.
 
 ## Samples
 
