@@ -32,6 +32,8 @@ function m55_main(		tokens1, tokens2, tokens3, token, tmp, depth) {
 	M55_EXPTYPE = "ex"
 	M55_WRTTYPE = "wr"
 
+	M55_ALSTYPE = "al"
+
 	M55_CHQTYPE = "cq"
 	M55_CHCTYPE = "cc"
 	M55_CHBTYPE = "cb"
@@ -56,6 +58,8 @@ function m55_main(		tokens1, tokens2, tokens3, token, tmp, depth) {
 	m55_macroenv_def("m55_esyscmd", M55_ESYTYPE)
 	m55_macroenv_def("m55_expr", M55_EXPTYPE)
 	m55_macroenv_def("m55_write", M55_WRTTYPE)
+
+	m55_macroenv_def("m55_alias", M55_ALSTYPE)
 
 	m55_macroenv_def("m55_changequote", M55_CHQTYPE)
 	m55_macroenv_def("m55_changecom", M55_CHCTYPE)
@@ -173,6 +177,8 @@ function m55_leave_expand(		args, locals, macroname, body, tmp, c, n, d) {
 			m55_error("m55_val: unknown macro name \"" macroname "\"")
 		}
 		m55_output(substr(body, 2, length(body)-1))
+	} else if (body == M55_ALSTYPE) {
+		m55_do_alias(args)
 	} else if (body == M55_CHQTYPE) {
 		m55_do_changequote(args)
 	} else if (body == M55_CHCTYPE) {
@@ -251,6 +257,10 @@ function m55_do_expr(args,		expr) {
 
 function m55_do_write(args) {
 	printf("%s", args[1])
+}
+
+function m55_do_alias(args) {
+	m55_macroenv_def(args[1], m55_macroenv_defs[args[2]])
 }
 
 function m55_do_changequote(args) {
