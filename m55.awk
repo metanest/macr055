@@ -260,6 +260,9 @@ function m55_do_write(args) {
 }
 
 function m55_do_alias(args) {
+	if ( ! (args[2] in m55_macroenv_defs)) {
+		m55_error("no such command " args[2] " in alias")
+	}
 	m55_macroenv_def(args[1], m55_macroenv_defs[args[2]])
 }
 
