@@ -143,7 +143,7 @@ function m55_main(		tokens1, tokens2, tokens3, token, tmp, depth) {
 	exit 0
 }
 
-function m55_leave_expand(		args, locals, macroname, body, tmp, c, n, d) {
+function m55_leave_expand(		args, locals, macroname, body, buf, c, n, d) {
 	m55_macroenv_leave(args, locals)
 
 	macroname = args[0]
@@ -196,7 +196,7 @@ function m55_leave_expand(		args, locals, macroname, body, tmp, c, n, d) {
 			m55_error("BUG: unknown pre-defined macro tag '" substr(body, 1, 1) "'")
 		}
 		body = substr(body, 2, length(body)-1)
-		tmp = ""
+		buf = ""
 		while (body != "") {
 			c = substr(body, 1, 1)
 			body = substr(body, 2, length(body)-1)
@@ -208,22 +208,22 @@ function m55_leave_expand(		args, locals, macroname, body, tmp, c, n, d) {
 					while (d in args) {
 						++d
 					}
-					tmp = tmp d
+					buf = buf d
 				} else if (m55_util_ord(n) == m55_util_ord(M55_PARAM_PREFIX)+1) {
 					d = args[0]
 					delete args[0]
-					tmp = tmp m55_util_join(args, M55_MACRO_SEP, 1)
+					buf = buf m55_util_join(args, M55_MACRO_SEP, 1)
 					args[0] = d
 				} else if (n == M55_PARAM_PREFIX) {
-					tmp = tmp M55_PARAM_PREFIX
+					buf = buf M55_PARAM_PREFIX
 				} else {
-					tmp = tmp args[m55_util_ord(n)-48]
+					buf = buf args[m55_util_ord(n)-48]
 				}
 			} else {
-				tmp = tmp c
+				buf = buf c
 			}
 		}
-		m55_input_pushback(tmp)
+		m55_input_pushback(buf)
 	}
 }
 
