@@ -8,7 +8,7 @@ BEGIN {
 
 # main
 
-function m55_main(		tokens1, tokens2, tokens3, token, tmp, depth) {
+function m55_main(		tokens1, tokens2, tokens3, token, tmp, in_quote) {
 	# globals/input
 	m55_input_buf = ""
 
@@ -82,16 +82,16 @@ function m55_main(		tokens1, tokens2, tokens3, token, tmp, depth) {
 			if (token == M55_MACRO_BRA) {
 				m55_macroenv_enter()
 			} else if (token == M55_QUOTE_BRA) {
-				depth = 1
+				in_quote = 1
 				delete tmp
 				tmp[M55_QUOTE_BRA] = 0
 				tmp[M55_QUOTE_KET] = 0
 				for (;;) {
 					if ((token = m55_input_get(tmp)) != "") {
 						if (token == M55_QUOTE_BRA) {
-							++depth
+							++in_quote
 						} else if (token == M55_QUOTE_KET) {
-							if (--depth == 0) {
+							if (--in_quote == 0) {
 								break
 							}
 						}
