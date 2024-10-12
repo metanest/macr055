@@ -193,7 +193,7 @@ function m55_leave_expand(		args, locals, macroname, body, tmp, c, n, d) {
 	# others (user macros)
 	else {
 		if (substr(body, 1, 1) != M55_USRTYPE) {
-			m55_error("BUG: unknown pre-defined macro tag")
+			m55_error("BUG: unknown pre-defined macro tag '" substr(body, 1, 1) "'")
 		}
 		body = substr(body, 2, length(body)-1)
 		tmp = ""
